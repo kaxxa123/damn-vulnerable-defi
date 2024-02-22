@@ -27,7 +27,7 @@ contract AttackSelfie is IERC3156FlashBorrower {
     }
 
     function onFlashLoan(
-        address initiator,
+        address,
         address token,
         uint256 amount,
         uint256,
