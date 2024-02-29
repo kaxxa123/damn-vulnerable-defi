@@ -1,0 +1,11 @@
+{
+    "remappings": [
+        "@=/share/node_modules/@",
+        "solady=/share/node_modules/solady",
+        "solmate=/share/node_modules/solmate"
+    ],
+    "optimizer": {
+        "enabled": true,
+        "runs": 200
+    }
+}
