@@ -132,3 +132,20 @@ mythril-puppet:
 		analyze /share/contracts/puppet/PuppetPool.sol \
 		--solc-json /share/mythril_map.json  \
 		--solv 0.8.24
+
+slither-puppet-v2:
+	# run this from slither docker container
+	solc-select install 0.6.6
+	solc-select use 0.6.6
+	slither /share/contracts/puppet-v2/PuppetV2Pool.sol  \
+	     	--truffle-ignore-compile  \
+			--exclude-optimization \
+			--solc-remaps "@=node_modules/@ solmate=node_modules/solmate"
+
+mythril-puppet-v2:
+	docker run --rm \
+        -v /home/alexubuntu22/code/damn-vulnerable-defi:/share  \
+		mythril/myth \
+		analyze /share/contracts/puppet-v2/PuppetV2Pool.sol \
+		--solc-json /share/mythril_map.json  \
+		--solv 0.6.6
