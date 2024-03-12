@@ -1,4 +1,8 @@
 slither:
+	# Once started, install make to run tests from
+	# this make file inside the container.
+	# 	sudo apt update
+	# 	sudo apt install make
 	docker run -it --rm  \
         -v /home/alexubuntu22/code/damn-vulnerable-defi:/share  \
 		-w /share \
@@ -149,3 +153,18 @@ mythril-puppet-v2:
 		analyze /share/contracts/puppet-v2/PuppetV2Pool.sol \
 		--solc-json /share/mythril_map.json  \
 		--solv 0.6.6
+
+slither-free-rider:
+	# run this from slither docker container
+	slither /share/contracts/free-rider/FreeRiderNFTMarketplace.sol  \
+	     	--truffle-ignore-compile  \
+			--exclude-optimization \
+			--solc-remaps "@=node_modules/@ solady=node_modules/solady"
+
+mythril-free-rider:
+	docker run --rm \
+        -v /home/alexubuntu22/code/damn-vulnerable-defi:/share  \
+		mythril/myth \
+		analyze /share/contracts/free-rider/FreeRiderNFTMarketplace.sol \
+		--solc-json /share/mythril_map.json  \
+		--solv 0.8.24
