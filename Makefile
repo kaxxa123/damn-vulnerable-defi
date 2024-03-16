@@ -168,3 +168,18 @@ mythril-free-rider:
 		analyze /share/contracts/free-rider/FreeRiderNFTMarketplace.sol \
 		--solc-json /share/mythril_map.json  \
 		--solv 0.8.24
+
+slither-backdoor:
+	# run this from slither docker container
+	slither /share/contracts/backdoor/WalletRegistry.sol  \
+	     	--truffle-ignore-compile  \
+			--exclude-optimization \
+			--solc-remaps "@=node_modules/@ solady=node_modules/solady"
+
+mythril-backdoor:
+	docker run --rm \
+        -v /home/alexubuntu22/code/damn-vulnerable-defi:/share  \
+		mythril/myth \
+		analyze /share/contracts/backdoor/WalletRegistry.sol \
+		--solc-json /share/mythril_map.json  \
+		--solv 0.8.24
