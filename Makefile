@@ -183,3 +183,24 @@ mythril-backdoor:
 		analyze /share/contracts/backdoor/WalletRegistry.sol \
 		--solc-json /share/mythril_map.json  \
 		--solv 0.8.24
+
+slither-wallet-mining:
+	# Get storage slot numbers for WalletDeployer
+	slither /share/contracts/wallet-mining/WalletDeployer.sol \
+		--print variable-order \
+		--solc-remaps "@=node_modules/@ solmate=node_modules/solmate"
+
+	# Get function-ids WalletDeployer
+	slither /share/contracts/wallet-mining/WalletDeployer.sol \
+		--print function-id \
+		--solc-remaps "@=node_modules/@ solmate=node_modules/solmate"
+
+	# Get storage slot numbers for AuthorizerUpgradeable
+	slither /share/contracts/wallet-mining/AuthorizerUpgradeable.sol \
+		--print variable-order \
+		--solc-remaps "@=node_modules/@ solmate=node_modules/solmate"
+
+	# Get function-ids AuthorizerUpgradeable
+	slither /share/contracts/wallet-mining/AuthorizerUpgradeable.sol \
+		--print function-id \
+		--solc-remaps "@=node_modules/@ solmate=node_modules/solmate"
