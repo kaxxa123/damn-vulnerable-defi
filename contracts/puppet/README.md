@@ -23,8 +23,8 @@
 
     (E - &E) * (T + &T) = E * T
 
-    &E = (E * &T) / (T + &T)    // ETH paid by user
-    &T = (T * &E) / (E - &E)    // Tokens received by user
+    &E = (E * &T) / (T + &T)    // ETH received by user
+    &T = (T * &E) / (E - &E)    // Tokens paid by user
     ```
 
 * However, swaps incur a fee, which goes to the liquidity providers. This is charged by deducting an amount the user receives. Thus: <BR />
