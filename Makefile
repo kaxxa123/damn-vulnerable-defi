@@ -204,3 +204,9 @@ slither-wallet-mining:
 	slither /share/contracts/wallet-mining/AuthorizerUpgradeable.sol \
 		--print function-id \
 		--solc-remaps "@=node_modules/@ solmate=node_modules/solmate"
+
+slither-abi-smuggling:
+	# Get list of function selectors
+	slither /share/contracts/abi-smuggling/SelfAuthorizedVault.sol  \
+		--print function-id \
+		--solc-remaps "@=node_modules/@ solady=node_modules/solady"
